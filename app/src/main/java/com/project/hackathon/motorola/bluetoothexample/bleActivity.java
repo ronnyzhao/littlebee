@@ -35,10 +35,12 @@ import java.util.UUID;
 
 public class bleActivity extends AppCompatActivity {
 
-    private BluetoothAdapter mBluetoothAdapter;
+    BluetoothAdapter mBluetoothAdapter;
+    BluetoothGatt    mGatt;
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
     private static final String BLE_TAG = "BEE_BLE_LOG";
+    Context mCtx;
 
     private boolean mScanning;
     private Handler mHandler;
@@ -54,14 +56,13 @@ public class bleActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ble);
 
-        Context context = this;
+        mCtx = this;
         mHandler = new Handler();
 
         // obtaints the ble adapter
         final BluetoothManager bluetoothManager =
-                (BluetoothManager) getSystemService(context.BLUETOOTH_SERVICE);
+                (BluetoothManager) getSystemService(mCtx.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
-
 
 
     }
@@ -91,8 +92,43 @@ public class bleActivity extends AppCompatActivity {
                             Log.d(BLE_TAG, "Device found is:" + device.getAddress());
                             Log.d(BLE_TAG, "Device found is:" + device.getName());
 
+                            // if device is a littleBee gather this device
+                            if(new String("LB").equals(device.getName())) {
+                                // gets the device instance and connect to it
+                                mGatt = device.connectGatt(mCtx, true, mGattCallback);
+                            }
+
                         }
                     });
+                }
+            };
+
+
+
+    private final BluetoothGattCallback mGattCallback =
+            new BluetoothGattCallback() {
+                @Override
+                public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+                    super.onConnectionStateChange(gatt, status, newState);
+
+                    if(newState == BluetoothProfile.STATE_DISCONNECTED){
+                        Log.d(BLE_TAG, "LittleBee was disconected! restarting the advertisement");
+                        scanLeDevice(true);
+
+                    } else if(newState == BluetoothProfile.STATE_CONNECTED) {
+                        Log.d(BLE_TAG, "LittleBee is connected! ");
+                    }
+
+                }
+
+                @Override
+                public void onServicesDiscovered(BluetoothGatt gatt, int status){
+                    super.onServicesDiscovered(gatt, status);
+                }
+
+                @Override
+                public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+                    super.onCharacteristicChanged(gatt, characteristic);
                 }
             };
 
