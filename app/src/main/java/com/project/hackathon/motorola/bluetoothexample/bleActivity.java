@@ -44,6 +44,7 @@ public class bleActivity extends AppCompatActivity {
 
     private boolean mScanning;
     private Handler mHandler;
+    private int bleStatus;
 
 
     private UUID myUUID;
@@ -55,6 +56,7 @@ public class bleActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_ble);
+
 
         mCtx = this;
         mHandler = new Handler();
@@ -92,12 +94,21 @@ public class bleActivity extends AppCompatActivity {
                             Log.d(BLE_TAG, "Device found is:" + device.getAddress());
                             Log.d(BLE_TAG, "Device found is:" + device.getName());
 
-                            // if device is a littleBee gather this device
-                            if(new String("LB").equals(device.getName())) {
-                                // gets the device instance and connect to it
-                                mGatt = device.connectGatt(mCtx, true, mGattCallback);
-                            }
+                            if(bleStatus != BluetoothProfile.STATE_CONNECTED) {
 
+                                TextView tv = (TextView) findViewById(R.id.bleScanStatus);
+
+
+                                // if device is a littleBee gather this device
+                                if(new String("LB").equals(device.getName())) {
+
+                                    tv.setText("LitteBee found! Connecting to it! ");
+
+                                    // gets the device instance and connect to it
+                                    mGatt = device.connectGatt(mCtx, true, mGattCallback);
+                                }
+
+                            }
                         }
                     });
                 }
@@ -111,12 +122,23 @@ public class bleActivity extends AppCompatActivity {
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                     super.onConnectionStateChange(gatt, status, newState);
 
+                    bleStatus = newState;
+
                     if(newState == BluetoothProfile.STATE_DISCONNECTED){
                         Log.d(BLE_TAG, "LittleBee was disconected! restarting the advertisement");
                         scanLeDevice(true);
 
+
                     } else if(newState == BluetoothProfile.STATE_CONNECTED) {
                         Log.d(BLE_TAG, "LittleBee is connected! ");
+                        TextView tv = (TextView) findViewById(R.id.bleScanStatus);
+
+                        // discover services then start the graph activity
+                        gatt.discoverServices();
+
+                        Intent it = new Intent(bleActivity.this, MainActivity.class);
+                        startActivity(it);
+
                     }
 
                 }
@@ -124,6 +146,16 @@ public class bleActivity extends AppCompatActivity {
                 @Override
                 public void onServicesDiscovered(BluetoothGatt gatt, int status){
                     super.onServicesDiscovered(gatt, status);
+
+                    if (status == BluetoothGatt.GATT_SUCCESS) {
+
+                        Log.d(BLE_TAG, "Discovered database! ");
+
+                    } else {
+
+                        Log.d(BLE_TAG, "Failed to services discovered, status " +  status);
+
+                    }
                 }
 
                 @Override
@@ -134,6 +166,9 @@ public class bleActivity extends AppCompatActivity {
 
 
     private void scanLeDevice(final boolean enable) {
+
+        TextView tv = (TextView) findViewById(R.id.bleScanStatus);
+
         if (enable) {
             // Stops scanning after a pre-defined scan period.
             mHandler.postDelayed(new Runnable() {
@@ -143,6 +178,8 @@ public class bleActivity extends AppCompatActivity {
                     mBluetoothAdapter.stopLeScan(mLeScanCallback);
                 }
             }, SCAN_PERIOD);
+
+            tv.setText("Finding LittleBee Device...");
 
             mScanning = true;
             mBluetoothAdapter.startLeScan(mLeScanCallback);

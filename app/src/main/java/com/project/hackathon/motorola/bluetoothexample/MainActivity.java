@@ -38,19 +38,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION}, 1);
-
     }
 
-
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-
-        //when entered on main application start the ble activity
-        Intent it = new Intent(MainActivity.this, bleActivity.class);
-        startActivity(it);
-    }
 
 
     @Override
