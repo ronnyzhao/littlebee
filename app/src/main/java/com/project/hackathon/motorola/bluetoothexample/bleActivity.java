@@ -40,6 +40,8 @@ public class bleActivity extends AppCompatActivity {
     BluetoothAdapter mBluetoothAdapter;
     BluetoothGatt    mGatt;
     BluetoothGattCharacteristic mBeeChar;
+    public static int aggroLevel;
+
 
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
@@ -54,6 +56,9 @@ public class bleActivity extends AppCompatActivity {
     private UUID myUUID;
     private final String BEE_BLESERVICE_UUID =
             "00000000-000F-11E1-9AB4-0002A5D5C51B";
+
+    private final String BEE_BLESERVICE_CHAR =
+            "00000002-000F-11E1-AC36-0002A5D5C51B";
 
 
     @Override
@@ -164,15 +169,15 @@ public class bleActivity extends AppCompatActivity {
                         for(BluetoothGattService service: services) {
 
                             if(service.getUuid().equals(myUUID)) {
-                                UUID id = service.getUuid();
-                                mBeeChar = service.getCharacteristic(id);
+                                myUUID = UUID.fromString(BEE_BLESERVICE_CHAR);
+                                mBeeChar = service.getCharacteristic(myUUID);
 
                                 // Set notification properties:
                                 gatt.setCharacteristicNotification(mBeeChar, true);
 
                                 for(BluetoothGattDescriptor desc : mBeeChar.getDescriptors()) {
 
-                                    desc.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                                    desc.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
                                     gatt.writeDescriptor(desc);
                                 }
 
@@ -192,7 +197,9 @@ public class bleActivity extends AppCompatActivity {
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     super.onCharacteristicChanged(gatt, characteristic);
 
-                    Log.d(BLE_TAG, "Characteristic update from device" + characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0));
+                    Log.d(BLE_TAG, "Characteristic update from device " + characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0));
+
+                    aggroLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0);
                 }
             };
 
