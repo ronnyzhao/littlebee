@@ -24,7 +24,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.util.Log;
-
+import android.content.BroadcastReceiver;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,11 +32,15 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
+import java.util.List;
+import java.lang.Object;
 
 public class bleActivity extends AppCompatActivity {
 
     BluetoothAdapter mBluetoothAdapter;
     BluetoothGatt    mGatt;
+    BluetoothGattCharacteristic mBeeChar;
+
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10000;
     private static final String BLE_TAG = "BEE_BLE_LOG";
@@ -49,7 +53,7 @@ public class bleActivity extends AppCompatActivity {
 
     private UUID myUUID;
     private final String BEE_BLESERVICE_UUID =
-            "00000000-000F-11E1-9AB4-0002A5D5C51";
+            "00000000-000F-11E1-9AB4-0002A5D5C51B";
 
 
     @Override
@@ -133,6 +137,9 @@ public class bleActivity extends AppCompatActivity {
                         Log.d(BLE_TAG, "LittleBee is connected! ");
                         TextView tv = (TextView) findViewById(R.id.bleScanStatus);
 
+                        //aftert connection, disable the scanning
+                        scanLeDevice(false);
+
                         // discover services then start the graph activity
                         gatt.discoverServices();
 
@@ -150,6 +157,29 @@ public class bleActivity extends AppCompatActivity {
                     if (status == BluetoothGatt.GATT_SUCCESS) {
 
                         Log.d(BLE_TAG, "Discovered database! ");
+                        List <BluetoothGattService> services = gatt.getServices();
+                        myUUID = UUID.fromString(BEE_BLESERVICE_UUID);
+
+                        //Iterate through characteristics to find the desired one
+                        for(BluetoothGattService service: services) {
+
+                            if(service.getUuid().equals(myUUID)) {
+                                UUID id = service.getUuid();
+                                mBeeChar = service.getCharacteristic(id);
+
+                                // Set notification properties:
+                                gatt.setCharacteristicNotification(mBeeChar, true);
+
+                                for(BluetoothGattDescriptor desc : mBeeChar.getDescriptors()) {
+
+                                    desc.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                                    gatt.writeDescriptor(desc);
+                                }
+
+                                break;
+                            }
+                        }
+
 
                     } else {
 
@@ -161,6 +191,8 @@ public class bleActivity extends AppCompatActivity {
                 @Override
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     super.onCharacteristicChanged(gatt, characteristic);
+
+                    Log.d(BLE_TAG, "Characteristic update from device" + characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0));
                 }
             };
 
