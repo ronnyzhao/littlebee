@@ -46,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
     GraphView mBeeGraph;
     private Handler  mGraphHandler;
     private Runnable mGraphTimer;
+    private Viewport mVp;
     private int xpos;
 
     @Override
@@ -62,10 +63,12 @@ public class MainActivity extends AppCompatActivity {
 
         mBeeGraph.addSeries(mSeries);
 
-        Viewport vp = mBeeGraph.getViewport();
-        vp.setXAxisBoundsManual(true);
-        vp.setMinX(0);
-        vp.setMaxX(1000);
+        mVp= mBeeGraph.getViewport();
+        mVp.setXAxisBoundsManual(true);
+        mVp.setMinX(0);
+        mVp.setMaxX(1000);
+        mVp.setMinY(-2);
+        mVp.setMaxY(2);
 
 
         xpos = 0;
@@ -88,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
 
                 xpos++;
-                mSeries.appendData(new DataPoint(xpos, bleActivity.aggroLevel), false, 1000);
+                mSeries.appendData(new DataPoint(xpos, bleActivity.aggroLevel), true, 1000);
                 mGraphHandler.postDelayed(this, 100);
             }
         };

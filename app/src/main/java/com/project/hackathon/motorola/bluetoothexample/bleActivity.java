@@ -40,7 +40,7 @@ public class bleActivity extends AppCompatActivity {
     BluetoothAdapter mBluetoothAdapter;
     BluetoothGatt    mGatt;
     BluetoothGattCharacteristic mBeeChar;
-    public static int aggroLevel;
+    public static float aggroLevel;
 
 
     private static final int REQUEST_ENABLE_BT = 1;
@@ -197,9 +197,10 @@ public class bleActivity extends AppCompatActivity {
                 public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
                     super.onCharacteristicChanged(gatt, characteristic);
 
-                    Log.d(BLE_TAG, "Characteristic update from device " + characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0));
+                    Log.d(BLE_TAG, "Characteristic update from device " + characteristic.getFloatValue(BluetoothGattCharacteristic.FORMAT_FLOAT,0));
 
-                    aggroLevel = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32,0);
+                    int tmp = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32,0);
+                    aggroLevel = Float.intBitsToFloat(tmp);
                 }
             };
 
